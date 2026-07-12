@@ -7,7 +7,7 @@ import {
   usdcBalance,
   usdcBalanceRaw,
   vaultPositionUsdc,
-  mintUsdc,
+  fundUsdc,
   withdrawUsdc,
   explorerTx,
   explorerAddress,
@@ -41,9 +41,9 @@ router.get("/balance", requireAuth, async (req: AuthedRequest, res) => {
   });
 });
 
-// Demo/crypto-deposit helper: mint test USDC to the user's wallet.
-// (Robinhood testnet USDC is openly mintable; on mainnet this is replaced by a
-// real on-ramp / inbound transfer detection.)
+// Demo/crypto-deposit helper: credit USDC to the user's wallet by transferring
+// real Circle USDC from the platform relayer (Arc USDC has no open mint). In
+// production this is replaced by real on-ramp / inbound-transfer detection.
 const fundSchema = z.object({ amountUsdc: z.string().regex(/^\d+(\.\d{1,6})?$/) });
 
 router.post("/dev-fund", requireAuth, async (req: AuthedRequest, res) => {
@@ -54,7 +54,7 @@ router.post("/dev-fund", requireAuth, async (req: AuthedRequest, res) => {
   if (!address) return res.status(404).json({ error: "not_found" });
 
   try {
-    const hash = await mintUsdc(address, parsed.data.amountUsdc);
+    const hash = await fundUsdc(address, parsed.data.amountUsdc);
     await prisma.deposit.create({
       data: {
         userId: req.userId!,

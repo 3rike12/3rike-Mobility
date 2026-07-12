@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { parseUnits } from "viem";
 import { prisma } from "../db.js";
 import {
-  mintUsdc,
+  fundUsdc,
   withdrawUsdc,
   usdcBalanceRaw,
   relayer,
@@ -81,7 +81,7 @@ export async function apply(userId: number, amountUsdc: string) {
   if (!user) throw new LoanError("not_found", 404);
 
   // Disburse principal to the rider's wallet.
-  const tx = await mintUsdc(user.walletAddress as `0x${string}`, amt.toFixed(6));
+  const tx = await fundUsdc(user.walletAddress as `0x${string}`, amt.toFixed(6));
 
   const totalDue = amt * (1 + INTEREST_PCT / 100);
   const weekly = totalDue / TERM_WEEKS;

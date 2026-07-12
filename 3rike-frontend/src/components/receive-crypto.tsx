@@ -78,7 +78,7 @@ export default function ReceiveCrypto({
   return (
     <div className="flex flex-col items-center w-full">
       <p className="text-gray-400 text-xs text-center mb-4">
-        Send USDC on Robinhood Chain to your wallet address below.
+        Send USDC on Arc to your wallet address below.
       </p>
 
       {/* Real QR of the wallet address */}

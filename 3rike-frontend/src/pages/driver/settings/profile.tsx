@@ -223,7 +223,7 @@ export default function SettingsProfile() {
 
                 {!editing && address && (
                     <a
-                        href={`https://explorer.testnet.chain.robinhood.com/address/${address}`}
+                        href={`https://testnet.arcscan.app/address/${address}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-1 text-xs text-[#01C259] hover:underline"

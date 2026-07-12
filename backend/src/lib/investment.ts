@@ -7,7 +7,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { config } from "../config.js";
 import { erc20Abi } from "./abi.js";
 import { tricycleNftAbi, investmentAbi } from "./investmentAbi.js";
-import { publicClient, relayerClient, robinhoodTestnet, confirm, rpcTransport } from "./chain.js";
+import { publicClient, relayerClient, arcTestnet, confirm, rpcTransport } from "./chain.js";
 import { decrypt } from "./crypto.js";
 
 const NFT = config.tricycleNftAddress;
@@ -93,10 +93,11 @@ export async function pendingYieldRaw(
   });
 }
 
-// Gas sponsorship for the two user txs (approve + invest). Kept modest — gas
-// is cheap here, so this covers both with headroom without draining the relayer.
-const MIN_GAS = parseEther("0.0005");
-const TOPUP_GAS = parseEther("0.0012"); // covers approve + invest
+// Gas safety-net for the two user txs (approve + invest). On Arc gas is paid in
+// native USDC (same pool as the user's USDC), so an investor already has gas —
+// this only catches a near-empty wallet. Amounts are the 18-dp native view.
+const MIN_GAS = parseEther("0.02");
+const TOPUP_GAS = parseEther("0.05"); // covers approve + invest
 
 async function ensureGas(address: `0x${string}`) {
   const bal = await publicClient.getBalance({ address });
@@ -110,7 +111,7 @@ function userClientFrom(encryptedKey: string) {
   const account = privateKeyToAccount(decrypt(encryptedKey) as `0x${string}`);
   const client = createWalletClient({
     account,
-    chain: robinhoodTestnet,
+    chain: arcTestnet,
     transport: rpcTransport(),
   });
   return { account, client };

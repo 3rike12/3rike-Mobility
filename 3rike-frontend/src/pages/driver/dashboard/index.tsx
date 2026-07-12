@@ -144,7 +144,7 @@ export default function DriverDashboard() {
                     Wallet Balance
                   </span>
                   <span className="text-green-100/80 text-[10px] font-light">
-                    Robinhood Chain
+                    Arc
                   </span>
                 </div>
 

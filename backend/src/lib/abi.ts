@@ -35,17 +35,6 @@ export const erc20Abi = [
     ],
     outputs: [{ name: "", type: "bool" }],
   },
-  // Robinhood testnet USDC exposes an open mint(address,uint256).
-  {
-    type: "function",
-    name: "mint",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "to", type: "address" },
-      { name: "amount", type: "uint256" },
-    ],
-    outputs: [],
-  },
 ] as const;
 
 export const vaultAbi = [

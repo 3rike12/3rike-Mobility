@@ -1,4 +1,4 @@
-// Fetches the current user's live USDC balance on Robinhood Chain (wallet +
+// Fetches the current user's live USDC balance on Arc (wallet +
 // yield vault). Every authenticated user has an embedded wallet, so this
 // always fetches once a user is present.
 

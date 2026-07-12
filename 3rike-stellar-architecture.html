@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3riKE × Stellar — Technical Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  :root{
+    --green:#01C259; --green-d:#019f4a; --ink:#12201a; --muted:#5c6b63;
+    --line:#e3e9e5; --bg-soft:#f4faf6; --accent:#0E1A13;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-print-color-adjust:exact; print-color-adjust:exact}
+  body{font-family:'Inter',system-ui,sans-serif; color:var(--ink); line-height:1.62; margin:0; background:#fff; font-size:15px}
+  .page{max-width:860px; margin:0 auto; padding:56px 60px}
+  .cover{padding:120px 60px 84px; border-bottom:6px solid var(--green)}
+  .cover .eyebrow{color:var(--green-d); font-weight:700; letter-spacing:.14em; text-transform:uppercase; font-size:12px}
+  .cover h1{font-size:44px; line-height:1.1; font-weight:800; margin:18px 0 10px; letter-spacing:-.02em}
+  .cover .sub{font-size:19px; color:var(--muted); max-width:660px; font-weight:500}
+  .cover .meta{margin-top:34px; font-size:13px; color:var(--muted)}
+  .cover .meta b{color:var(--ink)}
+  h2{font-size:25px; font-weight:800; letter-spacing:-.01em; margin:0 0 4px; padding-top:8px}
+  h2 .num{color:var(--green-d)}
+  h3{font-size:17px; font-weight:700; margin:24px 0 6px}
+  h4{font-size:15px; font-weight:700; margin:18px 0 3px; color:var(--accent)}
+  section{padding:30px 0; border-top:1px solid var(--line)}
+  section:first-of-type{border-top:none}
+  p{margin:10px 0}
+  .lead{color:var(--muted)}
+  ul{margin:8px 0 8px 2px; padding-left:20px}
+  li{margin:6px 0}
+  blockquote{margin:18px 0; padding:14px 18px; background:var(--bg-soft); border-left:4px solid var(--green); border-radius:0 10px 10px 0; color:#2c3a33; font-size:14px}
+  table{width:100%; border-collapse:collapse; margin:16px 0; font-size:13.5px}
+  th,td{border:1px solid var(--line); padding:9px 12px; text-align:left; vertical-align:top}
+  th{background:var(--accent); color:#fff; font-weight:600}
+  tbody tr:nth-child(even){background:#fafcfb}
+  code{font-family:'JetBrains Mono',monospace; background:#eef3f0; padding:1.5px 5px; border-radius:5px; font-size:12.5px}
+  pre.tree{background:#0e1a13; color:#e7f3ec; padding:16px 18px; border-radius:12px; overflow:auto; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.55; margin:14px 0}
+  pre.tree .c{color:#7bcd8a}
+  .diagram{background:var(--bg-soft); border:1px solid var(--line); border-radius:14px; padding:22px; margin:18px 0; text-align:center}
+  .diagram .cap{font-size:12px; color:var(--muted); margin-top:10px; font-weight:600}
+  .mermaid{display:flex; justify-content:center}
+  .badge{display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px}
+  .b-new{background:#eaf2ff; color:#2f6bd8}
+  .b-ok{background:#e6f6ea; color:var(--green-d)}
+  .tag{color:var(--green-d); font-weight:700}
+  @media print{
+    .page{padding:0 4px}
+    .cover{padding:60px 4px 40px}
+    section{padding:20px 0}
+    h2{break-after:avoid; break-before:page; padding-top:0}
+    #s1 h2{break-before:auto}
+    .diagram, table, pre.tree, blockquote{break-inside:avoid}
+    h3,h4{break-after:avoid}
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="eyebrow">Technical Architecture · Stellar &amp; Soroban</div>
+  <h1>3riKE × Stellar<br>Technical Architecture</h1>
+  <p class="sub">The financial operating system for Africa's electric mobility economy — non-custodial lease-to-own, fractional real-world-asset ownership, savings, and credit, built natively on Stellar &amp; Soroban.</p>
+  <div class="meta">
+    <b>Live product:</b> 3rike.xyz (complete UI/UX flows)<br>
+    <b>Team:</b> Anita (Design &amp; Lead) · Martin Machiebe (Full-Stack / Blockchain) · Andrew David (Smart Contracts / Backend) · Winnie (Community)
+  </div>
+</div>
+
+<div class="page">
+
+<section id="s1">
+  <h2><span class="num">1.</span> System Architecture Overview</h2>
+  <p>3riKE is a <strong>rider- and investor-facing</strong> platform. Riders lease-to-own electric three-wheelers with weekly USDC payments and build a portable, mobility-based credit identity; investors fund those vehicles as fractional real-world assets and receive automated, transparent yield. Every unit of value, ownership, and repayment settles on Stellar — chosen for sub-cent fees, ~5-second finality, native USDC, and Soroban programmability that makes ownership and cash-flow <em>verifiable and composable</em> rather than opaque.</p>
+  <p>The platform is a <strong>React/Vite PWA</strong> (rider + investor portals), a <strong>Node.js/TypeScript API</strong> with a Postgres ledger-index, a <strong>Sovereign Key Security Layer</strong> (client-side AES-256-GCM, with an optional passkey smart-wallet path), and a set of <strong>Stellar integration providers</strong>: Horizon + Soroban RPC, the 3riKE Soroban contract suite, Africa-facing anchors (SEP-6/24), Bridge (Stripe) stablecoin orchestration, the Reflector oracle, and DeFi composability (DeFindex, Soroswap, Blend).</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart TD
+    C["Client PWA<br/>Rider · Investor · Savings · Wallet"]
+    C -->|"HTTPS · SEP-10 session"| API["Backend API<br/>Node.js / TypeScript"]
+    API --> KEY["Sovereign Key Layer<br/>AES-256-GCM · Passkey"]
+    API --> DB[("PostgreSQL<br/>ledger index")]
+    API --> SA["Stellar Access<br/>Horizon + Soroban RPC"]
+    SA --> SC["3riKE Soroban Suite<br/>vault · lease · yield · savings · credit"]
+    SA --> AN["Anchors<br/>SEP-6/24/10/38/12 · GHS ⇄ USDC"]
+    SA --> BR["Bridge / Stripe<br/>fiat ⇄ USDC · cross-border"]
+    SA --> OR["Reflector Oracle<br/>FX + asset performance"]
+    SA --> DF["DeFindex · Soroswap · Blend<br/>yield · swaps · credit"]
+    </pre>
+    <div class="cap">Figure 1 — High-level system architecture</div>
+  </div>
+
+  <p class="lead"><strong>Guiding principles:</strong> non-custodial by default (no seed phrases) · gas-abstracted (riders never buy or hold XLM) · verifiable on-chain via Soroban events · composable (assets follow the SEP-41 token interface so the ecosystem can build on them).</p>
+</section>
+
+<section>
+  <h2><span class="num">2.</span> Integration Layer &amp; Module Map</h2>
+  <p>Stellar integration is separated into reusable infrastructure (<code>lib/stellar</code>), domain services, thin HTTP routes, and the Soroban contract workspace.</p>
+<pre class="tree">backend/src/
+├── lib/stellar/
+│   ├── horizon.ts        <span class="c"># Horizon + Soroban RPC clients · network passphrase · SAC helpers</span>
+│   ├── keys.ts           <span class="c"># Keypair generation · AES-256-GCM envelope · in-memory signing</span>
+│   ├── sponsor.ts        <span class="c"># Sponsored reserves (onboarding) · fee-bump gas abstraction</span>
+│   ├── soroban.ts        <span class="c"># Simulate · assemble · submit invocations · authorization trees</span>
+│   ├── anchors.ts        <span class="c"># SEP-10 auth · SEP-6/24 ramps · SEP-38 quotes · SEP-12 KYC</span>
+│   ├── bridge.ts         <span class="c"># Bridge (Stripe) stablecoin-orchestration client</span>
+│   └── reflector.ts      <span class="c"># Reflector oracle reader (FX, asset-performance feeds)</span>
+├── services/            <span class="c"># lease · invest · savings · credit · rider · anchor · bridge</span>
+└── routes/              <span class="c"># thin HTTP surface</span>
+
+contracts/ (Soroban)
+├── tricycle_vault       <span class="c"># RWA tokenization + fractional shares (SEP-41 interface)</span>
+├── lease_to_own         <span class="c"># Escrow · weekly milestone tracking · ownership progression</span>
+├── yield_distributor    <span class="c"># Accumulator-based pro-rata investor yield (claimable)</span>
+├── savings              <span class="c"># Target &amp; Lock accounts with penalty logic</span>
+└── credit_registry      <span class="c"># On-chain repayment history (oracle-ready)</span></pre>
+</section>
+
+<section>
+  <h2><span class="num">3.</span> Non-Custodial Wallets &amp; Sponsored Onboarding</h2>
+  <p>The largest barrier for non-crypto riders is wallet setup and gas. 3riKE eliminates both by creating and funding the user's Stellar account <em>for</em> them, with zero XLM ever required.</p>
+
+  <h3>3.1 Account creation via Sponsored Reserves (CAP-33)</h3>
+  <p>Stellar requires every account to hold a minimum XLM <strong>base reserve</strong>, plus an additional reserve per subentry (each trustline, for example). A first-time rider owns no XLM, so 3riKE's <strong>sponsor account absorbs those reserves</strong>. A single atomic transaction opens with <code>BeginSponsoringFutureReserves</code>, runs <code>CreateAccount</code> at a zero starting balance, adds <code>ChangeTrust</code> lines for USDC and the 3RIKE-SHARE asset, and closes with <code>EndSponsoringFutureReserves</code>. The rider co-signs to prove key ownership while the sponsor pays every reserve. The result: a live account holding USDC and <strong>zero XLM</strong> — with sponsored reserves reclaimable if the account is ever closed.</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+    participant U as Rider
+    participant App as 3riKE App
+    participant BE as Backend
+    participant S as Sponsor Wallet
+    participant H as Horizon
+    U->>App: Sign up (PIN / passkey)
+    App->>App: Generate keypair · encrypt seed (AES-256-GCM)
+    App->>BE: Request sponsored account
+    BE->>S: Build atomic sponsored tx (reserves + trustlines)
+    S->>H: BeginSponsoring → CreateAccount → ChangeTrust(USDC, SHARE) → EndSponsoring
+    H-->>U: Account live · holds USDC · owns 0 XLM
+    </pre>
+    <div class="cap">Figure 2 — Sponsored, non-custodial onboarding (one atomic transaction)</div>
+  </div>
+
+  <h3>3.2 Absolute gas abstraction via Fee-Bump transactions (CAP-15)</h3>
+  <p>Every user action — pay a lease, buy shares, save, claim yield — is signed locally by the rider, then wrapped in a <strong>fee-bump envelope</strong> whose fee source is 3riKE's sponsor wallet. The sponsor signs the outer envelope and submits; the network deducts the fee from the sponsor. The rider spends <strong>zero XLM</strong> on every transaction, and 3riKE can optionally meter an equivalent micro-fee in USDC within the same operation set. Riders never learn what "gas" is.</p>
+
+  <h3>3.3 Sovereign key security</h3>
+  <p>The user's key is derived and protected client-side: a 6-digit PIN is stretched with PBKDF2-HMAC-SHA256 (600,000 iterations) into a 256-bit key that encrypts the seed with AES-256-GCM (authenticated). Only the encrypted blob, IV, and salt are ever stored. Signing decrypts strictly in-memory; the seed never persists to disk or transits the network.</p>
+
+  <h3>3.4 Optional upgrade — Passkey smart wallets <span class="tag">(seedless)</span></h3>
+  <p>For a truly seedless experience, 3riKE can deploy a per-user <strong>passkey smart wallet</strong> as a Soroban custom account. Since Protocol 21, Soroban verifies <strong>secp256r1 (P-256)</strong> signatures natively — the exact curve used by WebAuthn passkeys. A device-bound biometric passkey authorises contract invocations through the account's custom authorization entrypoint, with 3riKE as an optional policy/recovery signer. This yields phishing-resistant onboarding with no PIN and no seed, ideal for mobile-first, low-literacy users, while the encrypted-key path remains a fallback.</p>
+</section>
+
+<section>
+  <h2><span class="num">4.</span> Soroban Foundations</h2>
+  <p>Before the product contracts, four Soroban capabilities underpin the whole design.</p>
+
+  <h4>USDC inside Soroban — the Stellar Asset Contract (SAC)</h4>
+  <p>Classic Stellar assets become callable from smart contracts through the <strong>Stellar Asset Contract</strong> — a canonical token contract that wraps issued USDC and exposes the standard token interface. Every 3riKE contract moves value by invoking the USDC SAC, so contract holdings, escrow balances, and user wallets are <em>the same asset</em>, fully interoperable with the rest of the Stellar economy. No wrapped or synthetic USDC is introduced.</p>
+
+  <h4>Deterministic state &amp; archival (storage tiers + TTL)</h4>
+  <p>Soroban exposes three storage tiers, and 3riKE maps them deliberately: <strong>Instance</strong> storage holds small contract-global config (asset addresses, admin, per-vehicle pool parameters); <strong>Persistent</strong> storage holds long-lived, high-value state (per-investor share balances, lease ledgers, credit records); <strong>Temporary</strong> storage holds ephemeral data. Persistent and instance entries carry a Time-To-Live and are archived if left untouched. 3riKE extends TTLs on active leases and open positions and restores archived entries on access — keeping ledger rent predictable while guaranteeing the chain stays the single source of truth.</p>
+
+  <h4>Explicit, composable authorization</h4>
+  <p>Every state-changing entrypoint asserts authorization on the acting address, and cross-contract calls carry <strong>scoped authorization trees</strong>: when <code>lease_to_own</code> invokes <code>yield_distributor</code> and <code>credit_registry</code> inside one rider payment, the rider's single signature authorises exactly that composed set of actions — and nothing more. Passkey smart wallets plug into the same framework as custom accounts. This makes multi-contract flows atomic <em>and</em> least-privilege.</p>
+
+  <h4>Events &amp; indexing</h4>
+  <p>Contracts publish structured events on every meaningful change — payment made, ownership advanced, yield distributed, delinquency flagged. 3riKE's indexer subscribes over Soroban RPC and projects events into Postgres, so the app serves instant portfolio, ownership-progress, and activity-feed reads while the ledger remains authoritative.</p>
+</section>
+
+<section>
+  <h2><span class="num">5.</span> The 3riKE Soroban Contract Suite <span class="tag">— core engine</span></h2>
+  <p>Five composable contracts turn a physical tricycle into a transparent, financeable, co-owned asset.</p>
+
+  <h4>5.1 <code>tricycle_vault</code> — RWA tokenization &amp; fractional shares</h4>
+  <p>Registers one on-chain asset record per real vehicle (make, model, VIN, price, battery/range metadata) and issues fungible ownership <strong>shares</strong> conforming to the <strong>SEP-41 token interface</strong>. Because shares are a standard token, investor ownership is portable and composable — any wallet, explorer, or protocol on Stellar can read it. Investing pulls USDC (via the SAC) and mints shares to the investor; balances live in persistent storage keyed by vehicle.</p>
+
+  <h4>5.2 <code>lease_to_own</code> — escrow &amp; milestone tracking</h4>
+  <p>Binds a rider to a vehicle under a weekly schedule (≈$70/week toward a ≈$4,900 lease-to-own price). Each weekly USDC payment is split <strong>deterministically on-chain</strong> in basis points — principal toward ownership, a yield slice to investors, and a platform/maintenance portion. Ownership progress is derived as a monotonic percentage and exposed for the UI's progress bar; an arrears counter drives configurable default handling. The payment atomically calls the yield distributor and credit registry.</p>
+
+  <h4>5.3 <code>yield_distributor</code> — automated, O(1) pro-rata yield</h4>
+  <p>Rather than looping over shareholders, distribution uses an <strong>accumulator</strong>: each payment increments a single <em>accumulated-yield-per-share</em> value, and an investor's claimable amount is computed lazily as <em>shares × accumulator − reward-debt</em>. This keeps distribution <strong>constant-gas regardless of investor count</strong> — thousands of investors per vehicle cost the same as one. Payouts are issued as <strong>Claimable Balances</strong> so yield is a first-class, auditable ledger object the investor redeems on their own schedule.</p>
+
+  <h4>5.4 <code>savings</code> — Target &amp; Lock accounts</h4>
+  <p>Goal-based <em>Target</em> saving and time-locked <em>Lock</em> saving in USDC, with an early-withdrawal <strong>penalty enforced in-contract</strong> against the ledger timestamp. Balances can be optionally routed into DeFindex yield indexes (§9) so idle savings beat local inflation.</p>
+
+  <h4>5.5 <code>credit_registry</code> — portable, oracle-ready credit</h4>
+  <p>An append-only, <strong>write-gated</strong> history — only the lease contract's authorization can record a repayment — turning on-time behaviour into a mobility-based credit score. Exposed as an oracle-ready view that other lenders (and 3riKE's own product via Blend, §9) can consume, giving previously "unbankable" riders a verifiable financial identity.</p>
+
+  <div class="diagram">
+    <pre class="mermaid">
+flowchart LR
+    INV["Investors<br/>SEP-41 shares"] -->|"buy shares (USDC)"| V["tricycle_vault<br/>+ lease_to_own<br/>+ yield_distributor"]
+    R["Rider<br/>leases to own"] -->|"weekly USDC"| V
+    V -->|"pro-rata yield<br/>(Claimable Balance)"| INV
+    V -->|"ownership % ▲ · credit ▲"| R
+    V --> CR["credit_registry"]
+    CR -->|"oracle-ready score"| BL["Blend lending"]
+    </pre>
+    <div class="cap">Figure 3 — The 3riKE on-chain loop: one rider payment, atomically composed across contracts</div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">6.</span> Anchors &amp; On/Off-Ramps — GHS ⇄ USDC</h2>
+  <p>To let riders and investors move between local money and USDC with <strong>familiar rails</strong> (mobile money, bank transfer), 3riKE integrates Africa-facing Stellar anchors across the full SEP ramp stack:</p>
+  <ul>
+    <li><strong>SEP-10</strong> — a challenge/response handshake where the anchor issues a specially-formed transaction the user signs (never submitted to the network) to prove account control; the returned JWT authenticates all subsequent anchor calls and seeds the app session.</li>
+    <li><strong>SEP-38</strong> — <strong>firm quotes</strong> with a quote ID and expiry, so the exact GHS↔USDC rate is shown and honoured before the user commits.</li>
+    <li><strong>SEP-24</strong> — hosted <em>interactive</em> deposit/withdrawal: the anchor serves its own KYC + payment UI in an embedded session, insulating 3riKE from handling sensitive PII and payment credentials.</li>
+    <li><strong>SEP-6</strong> — programmatic deposit/withdrawal for streamlined, returning flows where the anchor supports it.</li>
+    <li><strong>SEP-12</strong> — structured KYC field exchange with the anchor, reused to bootstrap 3riKE's own verification tier and reduce repeat KYC.</li>
+  </ul>
+
+  <div class="diagram">
+    <pre class="mermaid">
+sequenceDiagram
+    participant U as User
+    participant BE as Backend
+    participant A as Anchor (SEP-24)
+    U->>BE: "Add money" (GHS)
+    BE->>A: SEP-10 auth · SEP-38 firm quote
+    A-->>U: Interactive session (hosted KYC + pay)
+    U->>A: Pay via mobile money / bank
+    A->>BE: Signed status webhook · USDC delivered
+    BE-->>U: Deposit COMPLETED · balance updated
+    </pre>
+    <div class="cap">Figure 4 — Anchor on-ramp (withdrawal is the mirror)</div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="num">7.</span> Bridge (Stripe) — Stablecoin Orchestration</h2>
+  <p>3riKE integrates <strong>Bridge's Stablecoin Orchestration API</strong> for robust fiat↔USDC flows and future <strong>cross-border</strong> capability (diaspora investors funding riders, regional expansion). Anchors cover in-country mobile-money rails; Bridge adds card/bank funding and cross-border USDC settlement. Bridge webhooks reconcile into the same unified ledger as anchor events, so the app presents a single, consistent money-movement history regardless of provider.</p>
+</section>
+
+<section>
+  <h2><span class="num">8.</span> Native Money-Movement Primitives</h2>
+  <p>Beyond anchors, 3riKE uses Stellar's ledger primitives directly for transparency and atomicity:</p>
+  <ul>
+    <li><strong>Claimable Balances (CAP-23)</strong> — investor yield and lease refunds are escrowed as first-class ledger entries with <strong>claim predicates</strong>: a yield payout claimable unconditionally by the shareholder, or a refund that is time-bounded/conditional. Balances are auditable and reclaimable if unclaimed — ideal for transparent payouts and reversible escrow.</li>
+    <li><strong>Path Payments</strong> — <code>PathPaymentStrictReceive/StrictSend</code> let a rider spend USDC while a counterparty receives a different asset, routed atomically through Stellar's native DEX and Soroswap liquidity, with slippage bounds. Single-transaction FX, no separate swap, no intermediate custody.</li>
+    <li><strong>SEP-31</strong> — direct anchor-to-anchor cross-border transfers for diaspora → rider funding corridors.</li>
+    <li><strong>SEP-7</strong> — signed payment-request URIs, so a rider or investor can be handed a link (in-chat, SMS, WhatsApp) that opens a pre-filled, verifiable payment — the chat-native money request.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">9.</span> Oracles &amp; DeFi Composability</h2>
+  <h4>Reflector oracle</h4>
+  <p>3riKE consumes <strong>Reflector</strong>, a decentralized Soroban price-feed network, for verifiable <strong>GHS/USD FX</strong> (last-price and TWAP) to price on-ramp conversions, value savings balances, and normalise investor returns. Its subscription model pushes updates for the pairs 3riKE depends on, and its on-chain feed means valuations are <em>verifiable, not trusted</em>.</p>
+  <h4>DeFindex · Soroswap · Blend</h4>
+  <ul>
+    <li><strong>DeFindex</strong> — routes Target/Lock savings into yield-bearing USDC index strategies so idle balances earn and preserve purchasing power.</li>
+    <li><strong>Soroswap</strong> — aggregator/AMM providing the liquidity and best-path routing that powers in-app conversions and Path Payments.</li>
+    <li><strong>Blend</strong> — a Soroban lending market; using verifiable <code>credit_registry</code> history, riders unlock under-collateralised micro-loans (repairs, batteries, emergencies), extending 3riKE from lease-to-own into full mobility credit.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">10.</span> Compliance &amp; Asset Controls</h2>
+  <p>Real-world asset finance in a regulated market (Ghana) requires issuer-level controls, which Stellar provides natively:</p>
+  <ul>
+    <li><strong>Trustline authorization flags</strong> — the 3RIKE-SHARE ownership asset is issued with <code>AUTH_REQUIRED</code> / <code>AUTH_REVOCABLE</code>, so only KYC-approved participants can hold ownership shares and access can be revoked if compliance demands.</li>
+    <li><strong>Clawback (CAP-35)</strong> — enabled on the share asset so shares can be recovered in cases of fraud, chargeback, or a reversed lease — essential for RWA integrity.</li>
+    <li><strong>SEP-8 regulated assets</strong> — for flows needing per-transaction issuer approval, an approval server can co-sign only compliant transactions.</li>
+    <li><strong>Settlement asset</strong> — USDC is Circle-issued and Stellar-native: fully-reserved, compliant, and directly redeemable, so 3riKE never relies on synthetic or bridged stablecoins.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">11.</span> Unified Data Model</h2>
+  <p>The chain is the source of truth; Postgres indexes Soroban events for fast reads. Core entities:</p>
+  <table>
+    <thead><tr><th>Entity</th><th>Purpose</th><th>Source of truth</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Wallet</strong></td><td>Non-custodial sponsored Stellar account (encrypted key or passkey smart wallet)</td><td>Ledger + encrypted key store</td></tr>
+      <tr><td><strong>LeaseAgreement</strong></td><td>Rider↔vehicle lease: schedule, ownership %, arrears/status</td><td><code>lease_to_own</code> (indexed)</td></tr>
+      <tr><td><strong>Investment</strong></td><td>SEP-41 share holdings + pending claimable yield</td><td><code>tricycle_vault</code> / <code>yield_distributor</code></td></tr>
+      <tr><td><strong>SavingsGoal</strong></td><td>Target/Lock balances, unlock time, penalty, accrued yield</td><td><code>savings</code></td></tr>
+      <tr><td><strong>RampTransaction</strong></td><td>On/off-ramp state (SEP-24/6 + Bridge), GHS/USDC legs</td><td>Anchor/Bridge + ledger tx</td></tr>
+      <tr><td><strong>CreditRecord</strong></td><td>On-time/late history, derived oracle-ready score</td><td><code>credit_registry</code> (indexed)</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2><span class="num">12.</span> API Surface (Stellar Integration Layer)</h2>
+  <table>
+    <thead><tr><th>Module</th><th>Method</th><th>Endpoint</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td>Wallet</td><td>POST</td><td><code>/stellar/wallet</code></td><td>Create sponsored non-custodial account + trustlines</td></tr>
+      <tr><td>Wallet</td><td>POST</td><td><code>/stellar/wallet/broadcast</code></td><td>Fee-bump wrap + submit locally-signed transaction</td></tr>
+      <tr><td>Auth</td><td>POST</td><td><code>/stellar/auth/sep10</code></td><td>SEP-10 challenge/response → session token</td></tr>
+      <tr><td>Anchor</td><td>GET</td><td><code>/anchor/quote</code></td><td>SEP-38 firm GHS↔USDC quote</td></tr>
+      <tr><td>Anchor</td><td>POST</td><td><code>/anchor/deposit</code></td><td>SEP-24/6 on-ramp (GHS→USDC)</td></tr>
+      <tr><td>Anchor</td><td>POST</td><td><code>/anchor/withdraw</code></td><td>SEP-24/6 off-ramp (USDC→GHS)</td></tr>
+      <tr><td>Anchor</td><td>POST</td><td><code>/anchor/callback</code></td><td>Signed anchor status webhook → ledger</td></tr>
+      <tr><td>Bridge</td><td>POST</td><td><code>/bridge/transfer</code></td><td>Bridge (Stripe) fiat↔USDC / cross-border</td></tr>
+      <tr><td>Lease</td><td>POST</td><td><code>/lease/pay</code></td><td>Weekly USDC payment → split + ownership progress</td></tr>
+      <tr><td>Lease</td><td>GET</td><td><code>/lease/status</code></td><td>Ownership %, schedule, arrears</td></tr>
+      <tr><td>Invest</td><td>POST</td><td><code>/invest/buy</code></td><td>Buy SEP-41 shares of a vehicle</td></tr>
+      <tr><td>Invest</td><td>POST</td><td><code>/invest/claim</code></td><td>Claim pro-rata yield (Claimable Balance)</td></tr>
+      <tr><td>Invest</td><td>GET</td><td><code>/invest/portfolio</code></td><td>Holdings + pending yield (indexed)</td></tr>
+      <tr><td>Savings</td><td>POST</td><td><code>/savings/create</code></td><td>Open Target/Lock account</td></tr>
+      <tr><td>Savings</td><td>POST</td><td><code>/savings/withdraw</code></td><td>Withdraw (Lock penalty enforced on-chain)</td></tr>
+      <tr><td>Credit</td><td>GET</td><td><code>/credit/score</code></td><td>Oracle-ready credit score + factors</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2><span class="num">13.</span> Security Architecture</h2>
+  <ul>
+    <li><strong>Sovereign keys</strong> — AES-256-GCM under a PBKDF2 (600k-iteration) key; only the encrypted blob, IV, and salt are stored; decryption is in-memory during signing only.</li>
+    <li><strong>Gas abstraction</strong> — fee-bump envelopes; users never hold or spend XLM, removing a whole class of failure and phishing.</li>
+    <li><strong>Least-privilege authorization</strong> — every Soroban invocation carries a scoped authorization tree; the fee sponsor can pay fees but can never move user funds.</li>
+    <li><strong>Webhook integrity</strong> — anchor/Bridge callbacks verify the provider signature and a ±5-minute timestamp window (replay protection) before any ledger-state mutation.</li>
+    <li><strong>Issuer controls</strong> — trustline auth flags + clawback on the share asset provide a compliant recovery path for RWA edge cases.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="num">14.</span> Testing &amp; Assurance</h2>
+  <p>Contracts are developed test-first with Soroban's native testing framework, which runs invocations against an in-memory ledger with <strong>controllable time and mocked authorization</strong> — enabling deterministic simulation of multi-week lease schedules, yield distribution across many investors, penalty/early-withdrawal paths, and default handling. Deployment and invocation are driven on <strong>Stellar Testnet</strong>, with a CI pipeline running the contract suite plus TypeScript integration tests end-to-end on every change. A dedicated security-review pass precedes any mainnet deployment, and the issuer's clawback/auth controls provide a safety net for early production.</p>
+</section>
+
+<section>
+  <h2><span class="num">15.</span> Technology Stack Summary</h2>
+  <table>
+    <thead><tr><th>Layer</th><th>Technology / Stellar building block</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend PWA</td><td>React 19 · Vite · Tailwind v4</td><td><span class="badge b-ok">✔ Live at 3rike.xyz</span></td></tr>
+      <tr><td>Backend API</td><td>Node.js · TypeScript · Express</td><td><span class="badge b-ok">✔ Existing</span></td></tr>
+      <tr><td>Data / index</td><td>PostgreSQL (Soroban-event index)</td><td><span class="badge b-ok">✔ Existing</span></td></tr>
+      <tr><td>Key security</td><td>AES-256-GCM · PBKDF2 · in-memory signing</td><td><span class="badge b-ok">✔ Existing</span></td></tr>
+      <tr><td>Stellar SDK</td><td>Horizon + Soroban RPC clients</td><td><span class="badge b-new">Integrate</span></td></tr>
+      <tr><td>Smart contracts</td><td><strong>Soroban</strong> — vault · lease · yield · savings · credit</td><td><span class="badge b-new">Core build</span></td></tr>
+      <tr><td>Assets</td><td>SEP-41 shares · USDC via SAC · issuer auth + clawback</td><td><span class="badge b-new">Integrate</span></td></tr>
+      <tr><td>Onboarding</td><td>Sponsored Reserves (CAP-33) + Fee-Bump (CAP-15)</td><td><span class="badge b-new">Integrate</span></td></tr>
+      <tr><td>Wallet (option)</td><td>Passkey smart wallet (secp256r1 custom account)</td><td><span class="badge b-new">Integrate</span></td></tr>
+      <tr><td>Ramps</td><td>Anchors — SEP-6 / 24 / 10 / 38 / 12</td><td><span class="badge b-new">Integrate</span></td></tr>
+      <tr><td>Fiat / cross-border</td><td>Bridge (Stripe) · SEP-31</td><td><span class="badge b-new">Integrate</span></td></tr>
+      <tr><td>Payments</td><td>Claimable Balances (CAP-23) · Path Payments · SEP-7</td><td><span class="badge b-new">Integrate</span></td></tr>
+      <tr><td>Oracles</td><td>Reflector (FX + asset performance)</td><td><span class="badge b-new">Integrate</span></td></tr>
+      <tr><td>DeFi</td><td>DeFindex · Soroswap · Blend</td><td><span class="badge b-new">Integrate</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2><span class="num">16.</span> Phased Delivery Plan</h2>
+  <ul>
+    <li><strong>Phase 1 — Foundations &amp; Testnet MVP:</strong> sponsored non-custodial wallets + fee-bump gas abstraction (§3); anchor ramps SEP-10/6/24/38 (§6); initial <code>tricycle_vault</code> + <code>savings</code> contracts on Testnet with event indexing.</li>
+    <li><strong>Phase 2 — Advanced Logic &amp; Full Integration:</strong> complete <code>lease_to_own</code> + <code>yield_distributor</code> with milestone/default handling; <code>credit_registry</code>; issuer auth/clawback controls; all 3rike.xyz flows wired end-to-end for riders and investors.</li>
+    <li><strong>Phase 3 — Mainnet &amp; Pilot:</strong> mainnet deployment + security review; Bridge + SEP-31 cross-border; DeFindex/Blend composability; pilot with the Pragyia Riders' Union; public documentation and reusable integration patterns for the Stellar ecosystem.</li>
+  </ul>
+  <blockquote>3riKE brings transparency, ownership, and programmable finance to Africa's informal mobility economy — built natively on Stellar, composable by design, and engineered to onboard thousands of first-time Stellar users through tools that solve a real, high-demand problem.</blockquote>
+</section>
+
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad:true,
+    theme:'base',
+    themeVariables:{
+      primaryColor:'#EAF7EF', primaryBorderColor:'#01C259', primaryTextColor:'#0E1A13',
+      lineColor:'#5b6b62', secondaryColor:'#f4faf6', tertiaryColor:'#ffffff',
+      fontFamily:'Inter, sans-serif', fontSize:'13px'
+    },
+    flowchart:{ curve:'basis', padding:14 },
+    sequence:{ actorMargin:38, mirrorActors:false }
+  });
+</script>
+</body>
+</html>

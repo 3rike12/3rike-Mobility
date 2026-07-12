@@ -7,7 +7,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  // Local dev = SQLite (zero-setup). For Railway, switch this to "postgresql"
+  // and point DATABASE_URL at the managed Postgres (see DEPLOY.md).
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 

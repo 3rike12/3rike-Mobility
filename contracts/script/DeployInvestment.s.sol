@@ -6,10 +6,11 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {TricycleNFT} from "../src/TricycleNFT.sol";
 import {FractionalInvestment} from "../src/FractionalInvestment.sol";
 
-/// @notice Deploys the investment stack to Robinhood Chain and seeds a few
-///         demo tricycles + open pools so the app has data to show.
+/// @notice Deploys the investment stack to Arc and seeds a few demo tricycles
+///         + open pools so the app has data to show. USDC defaults to Arc's
+///         canonical Circle USDC (0x3600…0000); override with USDC_ADDRESS.
 contract DeployInvestment is Script {
-    address constant DEFAULT_USDC = 0x5B6C7cAF7F99f99154fD8375ec935Fcf03F326f5;
+    address constant DEFAULT_USDC = 0x3600000000000000000000000000000000000000;
 
     function run() external {
         uint256 pk = vm.envUint("PRIVATE_KEY");
@@ -45,7 +46,8 @@ contract DeployInvestment is Script {
         uint256 rangeKm
     ) internal {
         uint256 id = nft.mintTricycle(to, TricycleNFT.Meta(vehicleId, make, model, isEV, priceUsd, rangeKm));
-        // $20 per share → totalShares = priceUsd / 20 (2500→125, 2800→140).
-        inv.openPool(id, 20e6, priceUsd / 20);
+        // $1 per share → totalShares == priceUsd (asset price unchanged, shares
+        // affordable: invest from $1, and the full loop is demoable with small amounts).
+        inv.openPool(id, 1e6, priceUsd);
     }
 }

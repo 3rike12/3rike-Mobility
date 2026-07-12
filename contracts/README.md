@@ -1,4 +1,4 @@
-# 3rike Contracts (Robinhood Chain)
+# 3rike Contracts (Arc)
 
 Solidity contracts for 3rike, built with [Foundry](https://book.getfoundry.sh/).
 
@@ -13,12 +13,12 @@ forge build
 forge test
 ```
 
-## Deploy (Robinhood Chain testnet)
+## Deploy (Arc testnet)
 
 ```bash
 cp .env.example .env   # set PRIVATE_KEY (a funded testnet deployer)
 forge script script/Deploy.s.sol:Deploy \
-  --rpc-url "$ROBINHOOD_RPC_URL" --broadcast --legacy --skip-simulation
+  --rpc-url "$ARC_RPC_URL" --broadcast --legacy --skip-simulation
 ```
 
 ## Contracts

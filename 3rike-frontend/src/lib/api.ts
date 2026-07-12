@@ -155,7 +155,7 @@ export function login(payload: {
 }
 
 // =============================================================================
-// EVM wallet (Robinhood Chain) — live balances + crypto deposit
+// EVM wallet (Arc) — live balances + crypto deposit
 // =============================================================================
 
 export type EvmBalance = {

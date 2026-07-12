@@ -5,7 +5,7 @@ import { parseUnits } from "viem";
 import { prisma } from "../db.js";
 import { config } from "../config.js";
 import { requireAuth, type AuthedRequest } from "../middleware/auth.js";
-import { usdcBalanceRaw, mintUsdc, withdrawUsdc, relayer } from "../lib/chain.js";
+import { usdcBalanceRaw, fundUsdc, withdrawUsdc, relayer } from "../lib/chain.js";
 import {
   paycrestRate,
   paycrestInstitutions,
@@ -142,7 +142,7 @@ router.post("/withdraw/bank", requireAuth, async (req: AuthedRequest, res) => {
     txHash = await treasurySendUsdc(order.receiveAddress, total);
   } catch (err) {
     // Compensate: re-credit the user's testnet balance.
-    await mintUsdc(user.walletAddress as `0x${string}`, amountUsdc).catch(() => {});
+    await fundUsdc(user.walletAddress as `0x${string}`, amountUsdc).catch(() => {});
     console.error("treasury send failed:", (err as Error).message);
     return res.status(502).json({ error: "treasury_send_failed" });
   }
@@ -241,7 +241,7 @@ router.post("/deposit/check", requireAuth, async (req: AuthedRequest, res) => {
   const st = pc?.status;
   if (st === "settled" || st === "fulfilled" || st === "validated") {
     const user = await prisma.user.findUnique({ where: { id: order.userId } });
-    if (user) await mintUsdc(user.walletAddress as `0x${string}`, order.amountUsdc).catch(() => {});
+    if (user) await fundUsdc(user.walletAddress as `0x${string}`, order.amountUsdc).catch(() => {});
     await prisma.paymentOrder.update({ where: { id: order.id }, data: { status: "settled" } });
     return res.json({ status: "settled", creditedUsdc: order.amountUsdc });
   }
@@ -269,7 +269,7 @@ router.post("/webhook", async (req: any, res) => {
       // On-ramp completed → credit the user's testnet USDC.
       if (order.direction === "onramp") {
         const user = await prisma.user.findUnique({ where: { id: order.userId } });
-        if (user) await mintUsdc(user.walletAddress as `0x${string}`, order.amountUsdc).catch(() => {});
+        if (user) await fundUsdc(user.walletAddress as `0x${string}`, order.amountUsdc).catch(() => {});
       }
       await prisma.paymentOrder.update({ where: { id: order.id }, data: { status: "settled" } });
     }
@@ -279,7 +279,7 @@ router.post("/webhook", async (req: any, res) => {
     if (order.direction === "offramp") {
       const user = await prisma.user.findUnique({ where: { id: order.userId } });
       if (user) {
-        await mintUsdc(user.walletAddress as `0x${string}`, order.amountUsdc).catch(() => {});
+        await fundUsdc(user.walletAddress as `0x${string}`, order.amountUsdc).catch(() => {});
       }
     }
   }

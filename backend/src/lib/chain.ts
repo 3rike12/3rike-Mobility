@@ -12,45 +12,46 @@ import { config } from "../config.js";
 import { erc20Abi, vaultAbi } from "./abi.js";
 import { decrypt } from "./crypto.js";
 
-export const robinhoodTestnet = defineChain({
+// Arc testnet (Circle's L1). USDC is the NATIVE gas token: the native balance
+// (18-dp "gas view") and the canonical USDC ERC-20 at config.usdcAddress
+// (6-dp "balance view") are the SAME pool of funds. We use the ERC-20 view for
+// all app balances/transfers, and the native view only for gas. So holding
+// USDC inherently means having gas — no separate gas asset to juggle.
+export const arcTestnet = defineChain({
   id: config.chainId,
-  name: "Robinhood Chain Testnet",
-  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  name: "Arc Testnet",
+  nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 },
   rpcUrls: { default: { http: [config.rpcUrl] } },
   blockExplorers: {
-    default: {
-      name: "Blockscout",
-      url: "https://explorer.testnet.chain.robinhood.com",
-    },
+    default: { name: "Arcscan", url: "https://testnet.arcscan.app" },
   },
 });
 
-// The Robinhood testnet RPC is slow/rate-limited and intermittently times out,
-// so give every transport a generous timeout + automatic retries. Use
-// `rpcTransport()` for any wallet client created elsewhere too.
+// Generous timeout + automatic retries on every transport (testnet RPCs can be
+// slow/flaky). Use `rpcTransport()` for any wallet client created elsewhere too.
 export const rpcTransport = () =>
   http(config.rpcUrl, { timeout: 30_000, retryCount: 4, retryDelay: 1500 });
 
 export const publicClient = createPublicClient({
-  chain: robinhoodTestnet,
+  chain: arcTestnet,
   transport: rpcTransport(),
 });
 
-// Platform relayer/treasury: pays gas + performs settlement mints.
+// Platform relayer/treasury: holds real USDC, funds users, distributes yield,
+// and sponsors gas. Keep it funded with testnet USDC from https://faucet.circle.com
 export const relayer = privateKeyToAccount(config.relayerPrivateKey);
 export const relayerClient = createWalletClient({
   account: relayer,
-  chain: robinhoodTestnet,
+  chain: arcTestnet,
   transport: rpcTransport(),
 });
 
 const USDC_DECIMALS = 6;
 
 /**
- * Wait for a tx receipt with settings tuned for the Robinhood testnet, whose
- * RPC can be slow/flaky. Without this, viem's default timeout can fire on a tx
- * that actually lands — making a successful write look like a failure (and
- * risking a double-submit on retry).
+ * Wait for a tx receipt with settings tuned for a testnet RPC that can be slow.
+ * Without this, viem's default timeout can fire on a tx that actually lands —
+ * making a successful write look like a failure (and risking a double-submit).
  */
 export function confirm(hash: `0x${string}`) {
   return publicClient.waitForTransactionReceipt({
@@ -62,14 +63,14 @@ export function confirm(hash: `0x${string}`) {
 }
 
 export function explorerTx(hash: string): string {
-  return `${robinhoodTestnet.blockExplorers.default.url}/tx/${hash}`;
+  return `${arcTestnet.blockExplorers.default.url}/tx/${hash}`;
 }
 
 export function explorerAddress(address: string): string {
-  return `${robinhoodTestnet.blockExplorers.default.url}/address/${address}`;
+  return `${arcTestnet.blockExplorers.default.url}/address/${address}`;
 }
 
-/** Raw USDC balance (smallest unit) of an address. */
+/** Raw USDC balance (smallest unit, 6dp ERC-20 view) of an address. */
 export async function usdcBalanceRaw(address: `0x${string}`): Promise<bigint> {
   return publicClient.readContract({
     address: config.usdcAddress,
@@ -98,32 +99,37 @@ export async function vaultPositionUsdc(address: `0x${string}`): Promise<string>
 }
 
 /**
- * Mint test USDC to an address (Robinhood testnet USDC has an open mint).
- * Used to settle confirmed fiat deposits and for crypto-deposit demos.
- * Returns the tx hash once mined.
+ * Credit USDC to an address by transferring REAL Circle USDC from the platform
+ * relayer (Arc USDC is Circle-issued — there is no open mint). Used to settle
+ * confirmed fiat deposits, disburse loans, and fund demo wallets. The relayer
+ * must hold enough USDC (faucet: https://faucet.circle.com). Returns the tx hash.
+ *
+ * Note: because USDC is Arc's native gas asset, transferring USDC also tops up
+ * the recipient's gas — so a funded user can immediately transact.
  */
-export async function mintUsdc(to: `0x${string}`, amount: string): Promise<string> {
+export async function fundUsdc(to: `0x${string}`, amount: string): Promise<string> {
   const value = parseUnits(amount, USDC_DECIMALS);
   const hash = await relayerClient.writeContract({
     address: config.usdcAddress,
     abi: erc20Abi,
-    functionName: "mint",
+    functionName: "transfer",
     args: [to, value],
   });
   await confirm(hash);
   return hash;
 }
 
-// Gas sponsorship: keep a small ETH float in a user wallet before it signs.
-// Gas here is cheap (~0.01 gwei), so a modest top-up covers many txs — keeping
-// it small makes the relayer's balance stretch across far more wallets.
-const MIN_GAS = parseEther("0.0004");
-const TOPUP_GAS = parseEther("0.0008");
+// Gas safety-net: if a wallet's native (USDC) balance is too low to cover gas,
+// the relayer sends it a tiny amount. Rarely needed — any wallet holding USDC
+// already has gas (same pool) — so this only catches brand-new, zero-balance
+// wallets. Amounts are in the 18-dp native USDC view.
+const MIN_GAS = parseEther("0.05");
+const TOPUP_GAS = parseEther("0.1");
 
 /**
  * Withdraw USDC from a user's embedded wallet to an external address. The
- * relayer sponsors gas (tops the wallet up with a little ETH if needed), then
- * the user's own key signs the ERC-20 transfer. Returns the tx hash.
+ * relayer sponsors gas if needed, then the user's own key signs the ERC-20
+ * transfer. Returns the tx hash.
  */
 export async function withdrawUsdc(
   encryptedKey: string,
@@ -132,9 +138,9 @@ export async function withdrawUsdc(
 ): Promise<string> {
   const account = privateKeyToAccount(decrypt(encryptedKey) as `0x${string}`);
 
-  // Sponsor gas if the wallet can't cover the transfer.
-  const ethBal = await publicClient.getBalance({ address: account.address });
-  if (ethBal < MIN_GAS) {
+  // Sponsor gas if the wallet's native USDC can't cover the transfer fee.
+  const nativeBal = await publicClient.getBalance({ address: account.address });
+  if (nativeBal < MIN_GAS) {
     const fund = await relayerClient.sendTransaction({
       to: account.address,
       value: TOPUP_GAS,
@@ -144,7 +150,7 @@ export async function withdrawUsdc(
 
   const userClient = createWalletClient({
     account,
-    chain: robinhoodTestnet,
+    chain: arcTestnet,
     transport: rpcTransport(),
   });
   const value = parseUnits(amount, USDC_DECIMALS);

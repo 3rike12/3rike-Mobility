@@ -6,7 +6,7 @@
 
 *Real-world asset ownership, on-chain — built for Africa, starting with Nigeria.*
 
-**Built on Robinhood Chain** · Solidity · Node.js · React
+**Built on Arc** · Powered by **Circle USDC** · Solidity · Node.js · React
 
 [Live API](https://3rike-mobility-hood.up.railway.app/health) · [Smart Contracts](#-smart-contracts) · [Demo Video](#-demo)
 
@@ -28,7 +28,7 @@ The capital that powers African mobility is invisible, informal, and excludes th
 
 **3rike turns each electric tricycle into a shared, on-chain asset.**
 
-- Anyone can **invest** in a real tricycle — buying fractional shares from as little as **$20**.
+- Anyone can **invest** in a real tricycle — buying fractional shares from as little as **$1**.
 - A **driver** is matched to that tricycle and pays it off weekly toward full ownership.
 - Every payment **automatically** routes a slice to the investors who backed it — split fairly, pro-rata, on-chain.
 - Each payment builds the driver a **real credit score**, which unlocks **collateral-free loans** that grow with their track record.
@@ -73,7 +73,8 @@ When a driver pays, the platform calls `distributeYield` on-chain: USDC is split
 | **Smart contracts** | Solidity 0.8.24 · Foundry · OpenZeppelin (ERC-721 / ERC-1155 / ERC-4626) |
 | **Backend** | Node.js · TypeScript · Express · Prisma · PostgreSQL · viem |
 | **Frontend** | React 19 · Vite · TypeScript · Tailwind CSS v4 |
-| **Chain** | Robinhood Chain testnet (EVM, Arbitrum Orbit L2) — chain ID `46630` |
+| **Chain** | **Arc testnet** (Circle's L1, EVM-compatible — **USDC is the native gas token**) — chain ID `5042002` |
+| **Stablecoin** | **Native Circle USDC** (`0x3600…0000`, 6-dp ERC-20 view) — the app's unit of account |
 | **Rails** | USDC · Paycrest (Naira ⇄ stablecoin) · custodial gas-sponsored wallets |
 | **Hosting** | Backend on Railway · Frontend on Vercel |
 
@@ -81,16 +82,16 @@ When a driver pays, the platform calls `distributeYield` on-chain: USDC is split
 
 ## 📜 Smart Contracts
 
-Deployed to **Robinhood Chain testnet** (chain ID `46630`). Explorer: `https://explorer.testnet.chain.robinhood.com`
+Target chain: **Arc testnet** (chain ID `5042002`). Explorer: `https://testnet.arcscan.app`
 
 | Contract | Purpose | Address |
 |---|---|---|
-| **FractionalInvestment** | ERC-1155 fractional ownership + accumulator-based on-chain yield | `0xBBE7ECa80d91e26E24A9f498B15239a5D975542B` |
-| **TricycleNFT** | ERC-721 — one NFT per real-world tricycle (the asset) | `0x64b84997414F7Bb301B5e6A2E228066e27C7EDd0` |
-| **ThreeRikeVault** | ERC-4626 USDC yield vault | `0x34979dF7570697feB152468C3A17a51d0B9a34ED` |
-| **USDC** | Stablecoin used across the app (6 decimals) | `0x5B6C7cAF7F99f99154fD8375ec935Fcf03F326f5` |
+| **USDC** (Circle, canonical) | Native gas token + app currency (6-dp ERC-20 view) | `0x3600000000000000000000000000000000000000` |
+| **FractionalInvestment** | ERC-1155 fractional ownership + accumulator-based on-chain yield | _deploy to Arc → set in env_ |
+| **TricycleNFT** | ERC-721 — one NFT per real-world tricycle (the asset) | _deploy to Arc → set in env_ |
+| **ThreeRikeVault** | ERC-4626 USDC yield vault | _deploy to Arc → set in env_ |
 
-> All contract tests pass (`forge test`). The yield accumulator distributes O(1) regardless of investor count, and share transfers carry future yield (not past).
+> Contracts are EVM/Solidity and use `IERC20(usdc)`, so Arc's canonical Circle USDC drops in directly — no rewrite. All contract tests pass (`forge test`). The yield accumulator distributes O(1) regardless of investor count, and share transfers carry future yield (not past). See `contracts/deployments.md` to deploy.
 
 ---
 
@@ -130,7 +131,7 @@ npm run dev                      # http://localhost:5173
 
 Environment variables are documented in `backend/.env.example` and `3rike-frontend/.env.example`. See **[DEPLOY.md](./DEPLOY.md)** for hosting on Railway + Vercel.
 
-> ⚠️ The platform relayer wallet sponsors gas for all on-chain actions — keep it funded with testnet ETH (faucet: `https://faucet.testnet.chain.robinhood.com`).
+> ⚠️ The platform relayer wallet sponsors gas for all on-chain actions — keep it funded with testnet USDC (faucet: `https://faucet.circle.com`).
 
 ---
 

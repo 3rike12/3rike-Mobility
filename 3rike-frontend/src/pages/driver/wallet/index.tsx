@@ -98,7 +98,7 @@ export default function Wallet() {
                 <span className="text-sm font-light text-white/80 align-middle">USDC</span>
               </h1>
             )}
-            <p className="text-[11px] text-white/70 mt-2">Robinhood Chain · live on-chain balance</p>
+            <p className="text-[11px] text-white/70 mt-2">Arc · live on-chain balance</p>
           </div>
         </div>
 

@@ -20,19 +20,19 @@ backend first (you need its URL for the frontend).
    | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (reference the Postgres plugin) |
    | `JWT_SECRET` | `openssl rand -hex 32` |
    | `ENCRYPTION_KEY` | `openssl rand -hex 32` (64 hex chars) |
-   | `ROBINHOOD_RPC_URL` | `https://rpc.testnet.chain.robinhood.com` |
-   | `CHAIN_ID` | `46630` |
-   | `USDC_ADDRESS` | `0x5B6C7cAF7F99f99154fD8375ec935Fcf03F326f5` |
-   | `VAULT_ADDRESS` | `0x34979dF7570697feB152468C3A17a51d0B9a34ED` |
-   | `TRICYCLE_NFT_ADDRESS` | `0x64b84997414F7Bb301B5e6A2E228066e27C7EDd0` |
-   | `INVESTMENT_ADDRESS` | `0xBBE7ECa80d91e26E24A9f498B15239a5D975542B` |
-   | `RELAYER_PRIVATE_KEY` | (the relayer key — keep this wallet funded with testnet ETH) |
+   | `ARC_RPC_URL` | `https://rpc.testnet.arc.network` |
+   | `CHAIN_ID` | `5042002` |
+   | `USDC_ADDRESS` | `0x3600000000000000000000000000000000000000` (Circle USDC on Arc) |
+   | `TRICYCLE_NFT_ADDRESS` | _(from your Arc deploy — see contracts/deployments.md)_ |
+   | `INVESTMENT_ADDRESS` | _(from your Arc deploy)_ |
+   | `VAULT_ADDRESS` | _(from your Arc deploy, optional)_ |
+   | `RELAYER_PRIVATE_KEY` | (the relayer key — keep this wallet funded with testnet USDC from faucet.circle.com; USDC = gas on Arc) |
    | `CORS_ORIGIN` | your Vercel URL (set after step 2; can start with `*` to unblock, then lock down) |
    | `PORT` | `8080` (Railway also injects its own; the app reads `PORT`) |
    | *(optional, bank rails)* | `ARBITRUM_RPC_URL`, `ARBITRUM_USDC`, `TREASURY_ADDRESS`, `TREASURY_PRIVATE_KEY`, `PAYCREST_BASE`, `PAYCREST_API_KEY`, `PAYCREST_API_SECRET` |
 5. **Generate a domain:** Settings → Networking → **Generate Domain**. Copy it
    (e.g. `https://3rike-backend.up.railway.app`).
-6. Verify: open `https://<backend>/health` → `{"ok":true,"chainId":46630}`.
+6. Verify: open `https://<backend>/health` → `{"ok":true,"chainId":5042002}`.
 
 > ⚠️ Secrets: never commit `.env`. `RELAYER_PRIVATE_KEY` (and `TREASURY_PRIVATE_KEY`)
 > are real keys — set them only in Railway Variables. **Rotate the Paycrest secret**
